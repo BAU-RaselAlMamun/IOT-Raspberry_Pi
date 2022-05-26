@@ -9,8 +9,10 @@ To Create Smart Framing Technology using Raspberry Pi
 > - <a href="#environment">1. Environment Setup </a>
 > - <a href="#project">2. Project Setup </a>
 > - <a href="#skeleton">3. Styling with Skeleton </a>
+> - <a href="#dht">4. Measurement DHT22 sensor data & Show in Website </a>
 
 ## 1. Environment Setup <a href="" name="environment"> - </a>
+
 
 
 `$ sudo apt-get update`\
@@ -67,6 +69,18 @@ server {
 `$ ln -s /var/www/lab_app/lab_app_nginx.conf /etc/nginx/conf.d/`\
 `$ ls -al /etc/nginx/conf.d/`\
 `$ /etc/init.d/nginx restart`\
+`$ touch lab_app.py`\
+```py
+from flask import Flask
+app = Flask(__name__)
+
+@app.route("/")
+def hello():
+    return "Hello World!"
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8080)
+```
 `$ touch lab_app_uwsgi.ini`
 
 ```yml
@@ -114,5 +128,322 @@ WantedBy=multi-user.target
 `$ systemctl status emperor.uwsgi.service`\
 `$ systemctl enable emperor.uwsgi.service`\
 `$ reboot`
+`visit website - http://ip-address`
 
 ## 3. Styling with Skeleton <a href="" name="skeleton"> - </a>
+
+`$ mkdir static`\
+`$ cd static`\
+`$ mkdir css`\
+`$ mkdir images`\
+`$ mkdir js`
+
+- `Add files- css: normalize.css & skeleton.css & style.css`
+- `Add files- images: favicon.png`
+- `Add files- js: main.js`
+
+`$ mkdir templates`\
+`$ touch lab_app.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="static/css/normalize.css">
+  <link rel="stylesheet" href="static/css/skeleton.css">
+
+  <link rel="icon" type="static/image/png" href="static/images/favicon.png">
+</head>
+<body>
+  <p>Hello World!</p>
+  
+  <script src="static/js/main.js"></script>
+</body>
+</html>
+```
+
+- Edit File : `lab_app.py`
+
+```py
+from flask import Flask
+from flask import render_template
+
+app = Flask(__name__)
+app.debug = True
+
+@app.route("/")
+def lab_app():
+    return render_template("lap_app.html")
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8080)
+```
+
+`$ systemctl restart emperor.uwsgi.servic`\
+`visit website - http://ip-address`
+
+- Debugging a Flask app :
+
+`$ tail -n 100 /var/log/uwsgi/lab_app_uwsgi.log`
+
+## 4. Measurement DHT22 sensor data & Show Website <a href="" name="dht"> - </a>
+
+`$ pip install rpi.gpio`\
+`$ git clone https://github.com/adafruit/Adafruit_Python_DHT.git`\
+`$ cd Adafruit_Python_DHT/`\
+`$ python setup.py install`\
+`$ cd examples`\
+`$ python AdafruitDHT.py 2302 17` [Note: 2302 - Sensor No. & 17 - GPIO Pin No.]
+
+- Edit File : `lab_app.py`
+```py
+from flask import Flask, request, render_template
+import sys
+import Adafruit_DHT
+
+app = Flask(__name__)
+app.debug = True
+
+@app.route("/")
+def hello():
+    return "Hello World!"
+
+@app.route("/lab_temp")
+def lab_temp():
+	humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.AM2302, 17)
+	if humidity is not None and temperature is not None:
+		return render_template("lab_temp.html",temp=temperature,hum=humidity)
+	else:
+		return render_template("no_sensor.html")
+
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8080)
+```
+
+- Edit File : `lab_app.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="10">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <title>Lab App</title>
+
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="static/css/normalize.css">
+  <link rel="stylesheet" href="static/css/skeleton.css">
+
+  <link rel="icon" type="static/image/png" href="static/images/favicon.png">
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="two-third column" style="margin-top: 5%">
+          <h2>Real time lab conditions</h2>
+          <h1>Temperature: {{"{0:0.1f}".format(temp) }}°C</h1>
+          <h1>Humidity: {{"{0:0.1f}".format(hum)}}%</h1>  
+          <p>This page refreshes every 10 seconds</p>
+      </div>   
+    </div>
+  </div>  
+
+  <script src="static/js/main.js"></script>
+</body>
+</html>
+```
+`$ touch template/no_sensor.html`
+
+- Edit File : `no_sensor.html`
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <title>Lab App</title>
+
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="static/css/normalize.css">
+  <link rel="stylesheet" href="static/css/skeleton.css">
+
+  <link rel="icon" type="static/image/png" href="static/images/favicon.png">
+</head>
+<body>
+    <div class='test_container'>
+        <h1>Sorry, can't access the sensor!</h1>
+    </div>
+
+  <script src="static/js/main.js"></script>
+</body>
+</html>
+```
+
+`$ systemctl restart emperor.uwsgi.servic`
+
+### Create Database System
+
+`$ sqlite3 lab_app.db`\
+`$ sqlite> begin;`\
+`$ sqlite> create table temperatures (rDatetime datetime, sensorID text, temp numeric);`\
+`$ sqlite> insert into temperatures values (datetime(CURRENT_TIMESTAMP),"1",25);`\
+`$ sqlite> insert into temperatures values (datetime(CURRENT_TIMESTAMP),"1",25.10);`\
+`$ sqlite> commit;`\
+`$ sqlite> .tables;`\
+`$ sqlite> select * from temperatures;`\
+`$ sqlite> begin;`\
+`$ sqlite> create table humidities (rDatetime datetime, sensorID text, hum numeric);`\
+`$ sqlite> insert into humidities values (datetime(CURRENT_TIMESTAMP),"1",51);`\
+`$ sqlite> insert into humidities values (datetime(CURRENT_TIMESTAMP),"1",51.10);`\
+`$ sqlite> commit;`\
+`$ sqlite> .tables;`
+
+- Add Data into Database:\
+`$ touch env_log.py`
+```py
+import sqlite3
+import sys
+import Adafruit_DHT
+
+def log_values(sensor_id, temp, hum):
+	conn=sqlite3.connect('/var/www/lab_app/lab_app.db') 
+	curs=conn.cursor()
+	curs.execute("""INSERT INTO temperatures values(datetime(CURRENT_TIMESTAMP, 'localtime'), (?), (?))""", (sensor_id,temp))
+	curs.execute("""INSERT INTO humidities values(datetime(CURRENT_TIMESTAMP, 'localtime'), (?), (?))""", (sensor_id,hum))
+	conn.commit()
+	conn.close()
+
+humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.AM2302, 17)
+
+if humidity is not None and temperature is not None:
+	log_values("1", temperature, humidity)	
+else:
+	log_values("1", 30, 70)
+```
+`$ python env_log.py`
+
+- Check Data Recording:\
+`$ sqlite3 lab_app.db`\
+`$ sqlite> select * from temperatures;`\
+`$ sqlite> select * from humidities;`
+
+- Corn System add:\
+`$ corntab -e` [Note: Select Editior. Like -1, 2] \
+`*/1 * * * * /var/www/lab_app/bin/python /var/www/lab_app/env_log.py` [Note: Add this line & Save It, Here, 1 = 1min.] \
+`$ sqlite3 lab_app.db`\
+`$ sqlite> select * from temperatures;`\
+`$ sqlite> select * from humidities;`
+
+- Show Data into Website:
+
+- Edit File : `lab_app.py`
+```py
+from flask import Flask, request, render_template
+import sys
+import Adafruit_DHT
+import sqlite3
+
+app = Flask(__name__)
+app.debug = True
+
+@app.route("/lab_temp")
+def lab_temp():
+	humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.AM2302, 17)
+	if humidity is not None and temperature is not None:
+		return render_template("lab_app.html",temp=temperature,hum=humidity)
+	else:
+		return render_template("no_sensor.html")
+
+@app.route("/lab_env_db")
+def lab_env_db():
+	conn=sqlite3.connect('/var/www/lab_app/lab_app.db')
+	curs=conn.cursor()
+	curs.execute("SELECT * FROM temperatures")
+	temperatures = curs.fetchall()
+	curs.execute("SELECT * FROM humidities")
+	humidities = curs.fetchall()
+	conn.close()
+	return render_template("lab_env_db.html",temp=temperatures,hum=humidities)
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8080)
+```
+
+`$ touch templates/lab_env_db.html`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Lab App DB</title>
+  
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="static/css/normalize.css">
+    <link rel="stylesheet" href="static/css/skeleton.css">
+  
+    <link rel="icon" type="static/image/png" href="static/images/favicon.png">
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="one-third column" style="margin-top: 5%">
+          <strong>Showing all records</strong>                
+          <h2>Temperatures</h2>                    
+            <table class="u-full-width">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>&deg;C</th>                        
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in temp %}
+                <tr>
+                  <td>{{row[0]}}</td>
+                  <td>{{'%0.2f'|format(row[2])}}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>  
+            <h2>Humidities</h2>
+            <table class="u-full-width">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>%</th>                        
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in hum %}
+                <tr>
+                  <td>{{row[0]}}</td>
+                  <td>{{'%0.2f'|format(row[2])}}</td>
+                </tr>          
+                {% endfor %}
+              </tbody>
+            </table>                                              
+        </div>
+    </div>           
+  </body>
+</html>
+```
+`$ systemctl restart emperor.uwsgi.servic`
