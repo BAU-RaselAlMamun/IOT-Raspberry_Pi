@@ -70,7 +70,7 @@ server {
 `$ ln -s /var/www/lab_app/lab_app_nginx.conf /etc/nginx/conf.d/`\
 `$ ls -al /etc/nginx/conf.d/`\
 `$ /etc/init.d/nginx restart`\
-`$ touch lab_app.py`\
+`$ touch lab_app.py`
 ```py
 from flask import Flask
 app = Flask(__name__)
@@ -188,7 +188,7 @@ if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)
 ```
 
-`$ systemctl restart emperor.uwsgi.servic`\
+`$ systemctl restart emperor.uwsgi.service`\
 `visit website - http://ip-address`
 
 - Debugging a Flask app :
@@ -300,7 +300,7 @@ if __name__ == "__main__":
 </html>
 ```
 
-`$ systemctl restart emperor.uwsgi.servic`
+`$ systemctl restart emperor.uwsgi.service`
 
 ### Create Database System
 
@@ -458,7 +458,7 @@ if __name__ == "__main__":
   </body>
 </html>
 ```
-`$ systemctl restart emperor.uwsgi.servic`
+`$ systemctl restart emperor.uwsgi.service`
 
 
 ## 5. Implement data & filter system <a href="" name="filter"> - </a>
@@ -510,7 +510,7 @@ if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)
 ```
 
-`$ systemctl restart emperor.uwsgi.servic`
+`$ systemctl restart emperor.uwsgi.service`
 - Check filter syatem into website : `http://ip-address/lab_env_db?from=2022-05-27 14:30:00&to=2022-05-27 15:30:00`
 
 ### Using Invalid Syntex (How it is work?)
@@ -554,7 +554,7 @@ if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)
 ```
 
-`$ systemctl restart emperor.uwsgi.servic`\
+`$ systemctl restart emperor.uwsgi.service`\
 - Check filter system : `http://ip-address/lab_env_db?from=2022-05-27 14:30:00&to=2022-05-`
 
 ### Simplefy the code:
@@ -584,7 +584,7 @@ def get_records():
 	conn.close()
 	return [temperatures, humidities, from_date_str, to_date_str]
 ```
-`$ systemctl restart emperor.uwsgi.servic`
+`$ systemctl restart emperor.uwsgi.service`
 
 - Edit File : `lab_env_db.html`
 ```html
@@ -717,4 +717,4 @@ def get_records():
 	conn.close()
 	return [temperatures, humidities, from_date_str, to_date_str]
 ```
-`$ systemctl restart emperor.uwsgi.servic`
+`$ systemctl restart emperor.uwsgi.service`
