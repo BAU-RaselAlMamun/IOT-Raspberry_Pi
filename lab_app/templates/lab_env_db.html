@@ -17,14 +17,32 @@
   <body>
     <div class="container">
       <div class="row">
+        <div class="eleven columns">
+          <form id="range_select" action = "/lab_env_db" method="GET">        
+            <div class="one column">
+              <input type="radio" name="range_h" value="3" id="radio_3" /><label for="radio_3">3hrs</label>
+            </div>
+            <div class="one column">
+              <input type="radio" name="range_h" value="6" id="radio_6" /><label for="radio_6">6hrs</label>
+            </div>
+            <div class="one column">
+              <input type="radio" name="range_h" value="12" id="radio_12" /><label for="radio_12">12hrs</label>
+            </div>
+            <div class="one column">
+              <input type="radio" name="range_h" value="24" id="radio_24" /><label for="radio_24">24hrs</label>
+            </div>
+          </form>          
+        </div>
+      </div>
+      <div class="row">
         <div class="one-third column" style="margin-top: 5%">
-          <strong>Showing all records</strong>                
-          <h2>Temperatures</h2>                    
+          <strong>Showing all records</strong>
+          <h2>Temperatures</h2>
             <table class="u-full-width">
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>&deg;C</th>                        
+                  <th>&deg;C</th>
                 </tr>
               </thead>
               <tbody>
@@ -35,13 +53,13 @@
                 </tr>
                 {% endfor %}
               </tbody>
-            </table>  
+            </table>
             <h2>Humidities</h2>
             <table class="u-full-width">
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>%</th>                        
+                  <th>%</th>
                 </tr>
               </thead>
               <tbody>
@@ -49,11 +67,20 @@
                 <tr>
                   <td>{{row[0]}}</td>
                   <td>{{'%0.2f'|format(row[2])}}</td>
-                </tr>          
+                </tr>
                 {% endfor %}
               </tbody>
-            </table>                                              
+            </table>
         </div>
-    </div>           
+      </div>          
+    </div>
+
+    <script src="static/js/main.js"></script>
+    <script src="static/js/jquery-3.6.0.slim.min.js"></script>
+    <script>
+      jQuery("#range_select input[type=radio]").click(function(){
+        jQuery("#range_select").submit();
+      });
+    </script>         
   </body>
 </html>
