@@ -129,6 +129,7 @@ WantedBy=multi-user.target
 `$ systemctl status emperor.uwsgi.service`\
 `$ systemctl enable emperor.uwsgi.service`\
 `$ reboot`
+
 `visit website - http://ip-address`
 
 ## 3. Styling with Skeleton <a href="" name="skeleton"> - </a>
@@ -198,7 +199,7 @@ if __name__ == "__main__":
 ## 4. Setup DHT22 sensor & Show data into Website <a href="" name="dht"> - </a>
 
 `$ pip install rpi.gpio`\
-`$ git clone https://github.com/adafruit/Adafruit_Python_DHT.git`\
+`Add - Adafruit_Python_DHT (Copy This Folder)`\
 `$ cd Adafruit_Python_DHT/`\
 `$ python setup.py install`\
 `$ cd examples`\
@@ -214,14 +215,10 @@ app = Flask(__name__)
 app.debug = True
 
 @app.route("/")
-def hello():
-    return "Hello World!"
-
-@app.route("/lab_temp")
 def lab_temp():
 	humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.AM2302, 17)
 	if humidity is not None and temperature is not None:
-		return render_template("lab_temp.html",temp=temperature,hum=humidity)
+		return render_template("lab_app.html",temp=temperature,hum=humidity)
 	else:
 		return render_template("no_sensor.html")
 
@@ -310,14 +307,14 @@ if __name__ == "__main__":
 `$ sqlite> insert into temperatures values (datetime(CURRENT_TIMESTAMP),"1",25);`\
 `$ sqlite> insert into temperatures values (datetime(CURRENT_TIMESTAMP),"1",25.10);`\
 `$ sqlite> commit;`\
-`$ sqlite> .tables;`\
+`$ sqlite> .tables`\
 `$ sqlite> select * from temperatures;`\
 `$ sqlite> begin;`\
 `$ sqlite> create table humidities (rDatetime datetime, sensorID text, hum numeric);`\
 `$ sqlite> insert into humidities values (datetime(CURRENT_TIMESTAMP),"1",51);`\
 `$ sqlite> insert into humidities values (datetime(CURRENT_TIMESTAMP),"1",51.10);`\
 `$ sqlite> commit;`\
-`$ sqlite> .tables;`
+`$ sqlite> .tables`
 
 - Add Data into Database:\
 `$ touch env_log.py`
@@ -343,13 +340,15 @@ else:
 ```
 `$ python env_log.py`
 
-- Check Data Recording:\
+- Check Data Recording:
+
 `$ sqlite3 lab_app.db`\
 `$ sqlite> select * from temperatures;`\
 `$ sqlite> select * from humidities;`
 
-- Corn System add:\
-`$ corntab -e` [Note: Select Editior. Like -1, 2] \
+- Corn System add:
+
+`$ crontab -e` [Note: Select Editior. Like -1, 2] \
 `*/1 * * * * /var/www/lab_app/bin/python /var/www/lab_app/env_log.py` [Note: Add this line & Save It, Here, 1 = 1min.] \
 `$ sqlite3 lab_app.db`\
 `$ sqlite> select * from temperatures;`\
@@ -367,7 +366,7 @@ import sqlite3
 app = Flask(__name__)
 app.debug = True
 
-@app.route("/lab_temp")
+@app.route("/")
 def lab_temp():
 	humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.AM2302, 17)
 	if humidity is not None and temperature is not None:
@@ -469,8 +468,8 @@ if __name__ == "__main__":
 
 - Filter Date & Time:
 
-`$ sqlite> SELECT * FORM temperatures WHERE rDatetime BETWEEN "2022-05-27 14:30:00" AND "2022-05-27 16:30:00";`\
-`$ sqlite> SELECT * FORM humidities WHERE rDatetime BETWEEN "2022-05-27 14:30:00" AND "2022-05-27 16:30:00";`
+`$ sqlite> SELECT * FROM temperatures WHERE rDatetime BETWEEN "2022-05-27 14:30:00" AND "2022-05-27 16:30:00";`\
+`$ sqlite> SELECT * FROM humidities WHERE rDatetime BETWEEN "2022-05-27 14:30:00" AND "2022-05-27 16:30:00";`
 
 - Edit File : `lab_app.py`
 ```py
@@ -484,7 +483,7 @@ import sqlite3
 app = Flask(__name__)
 app.debug = True
 
-@app.route("/lab_temp")
+@app.route("/")
 def lab_temp():
 	humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.AM2302, 17)
 	if humidity is not None and temperature is not None:
