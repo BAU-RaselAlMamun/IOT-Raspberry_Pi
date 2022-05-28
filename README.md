@@ -199,7 +199,7 @@ if __name__ == "__main__":
 ## 4. Setup DHT22 sensor & Show data into Website <a href="" name="dht"> - </a>
 
 `$ pip install rpi.gpio`\
-`Add - Adafruit_Python_DHT (Copy This Folder)`\
+`Download - [Adafruit_Python_DHT.rar] file (Extract File & Copy This Folder & Paste lab_app folder )`\
 `$ cd Adafruit_Python_DHT/`\
 `$ python setup.py install`\
 `$ cd examples`\
