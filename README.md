@@ -11,6 +11,8 @@ To Create Smart Framing Technology using Raspberry Pi
 > - <a href="#skeleton">3. Styling with Skeleton </a>
 > - <a href="#dht">4. Setup DHT22 sensor & Show data into Website </a>
 > - <a href="#filter">5. Implement data & filter system </a>
+> - <a href="#chart">6. Add Google Charts </a>
+> - <a href="#date">7. Setup Date time Picker </a>
 
 ## 1. Environment Setup <a href="" name="environment"> - </a>
 
@@ -462,6 +464,7 @@ if __name__ == "__main__":
 
 ## 5. Implement data & filter system <a href="" name="filter"> - </a>
 
+
 `$ sqlite3 lab_app.db`\
 `$ sqlite> select * from temperatures;`\
 `$ sqlite> select * from humidities;`
@@ -715,5 +718,322 @@ def get_records():
 	humidities 		= curs.fetchall()
 	conn.close()
 	return [temperatures, humidities, from_date_str, to_date_str]
+```
+`$ systemctl restart emperor.uwsgi.service`
+
+## 6. Add Google Charts <a href="" name="chart"> - </a>
+
+
+- Edit File : `lab_env_db.html`
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Lab App DB</title>
+  
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="static/css/normalize.css">
+    <link rel="stylesheet" href="static/css/skeleton.css">
+    <link rel="stylesheet" href="static/css/style.css">
+
+    <link rel="icon" type="static/image/png" href="static/images/favicon.png">
+    
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="eleven columns">
+          <form id="range_select" action = "/lab_env_db" method="GET">        
+            <div class="one column">
+              <input type="radio" name="range_h" value="3" id="radio_3" /><label for="radio_3">3hrs</label>
+            </div>
+            <div class="one column">
+              <input type="radio" name="range_h" value="6" id="radio_6" /><label for="radio_6">6hrs</label>
+            </div>
+            <div class="one column">
+              <input type="radio" name="range_h" value="12" id="radio_12" /><label for="radio_12">12hrs</label>
+            </div>
+            <div class="one column">
+              <input type="radio" name="range_h" value="24" id="radio_24" /><label for="radio_24">24hrs</label>
+            </div>
+          </form>          
+        </div>
+      </div>
+      <div class="row">
+        <div class="one-third column" style="margin-top: 5%">
+          <strong>Showing all records</strong>
+          <h2>Temperatures</h2>
+            <table class="u-full-width">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>&deg;C</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in temp %}
+                <tr>
+                  <td>{{row[0]}}</td>
+                  <td>{{'%0.2f'|format(row[2])}}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            <h2>Humidities</h2>
+            <table class="u-full-width">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in hum %}
+                <tr>
+                  <td>{{row[0]}}</td>
+                  <td>{{'%0.2f'|format(row[2])}}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+        </div>
+      <div class="two-thirds column" style="margin-top: 5%">
+        <div class="row">                  
+          <div class="row">
+            <div class="three columns">
+              <div id="chart_temps"></div>
+              <div id="chart_humid"></div>
+            </div>
+          </div>
+        </div>     
+      </div>
+      </div>
+    </div>
+
+    <script src="static/js/main.js"></script>
+    <script src="static/js/jquery-3.6.0.slim.min.js"></script>
+        <script>
+      jQuery("#range_select input[type=radio]").click(function(){
+        jQuery("#range_select").submit();
+      });
+    </script>
+
+    <script src="static/js/loader.js"></script>
+
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('datetime', 'Time');  
+        data.addColumn('number', 'Temperature');      
+        data.addRows([
+            {% for row in temp %} 
+              [new Date({{row[0][0:4]}},{{row[0][5:7]}},{{row[0][8:10]}},{{row[0][11:13]}},{{row[0][14:16]}}),
+                  {{'%0.2f'|format(row[2])}}],
+            {% endfor %}
+        ]);
+
+        var options = {
+          width: 600,
+          height: 563,
+          title: 'Temperature',
+          hAxis: {
+            title: "Date",
+            gridlines: { count: {{temp_items}}, color: '#CCC' },
+            format: 'dd-MMM-yyyy HH:mm'
+          },
+          vAxis: {
+            title: 'Percent'
+          },
+          curveType: 'function',
+        };
+
+        var chart = new google.visualization.LineChart(document.getElementById('chart_temps'));
+
+        chart.draw(data, options);
+      }
+    </script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('datetime', 'Time');  
+        data.addColumn('number', 'Humidity');      
+        data.addRows([
+            {% for row in hum %} 
+              [new Date({{row[0][0:4]}},{{row[0][5:7]}},{{row[0][8:10]}},{{row[0][11:13]}},{{row[0][14:16]}}),
+                  {{'%0.2f'|format(row[2])}}],
+            {% endfor %}
+        ]);
+
+        var options = {
+          title: 'Humidity',
+          width: 600,
+          height: 563,
+          hAxis: {
+            title: "Date",
+            gridlines: { count: {{hum_items}}, color: '#CCC' },
+            format: 'dd-MMM-yyyy HH:mm'
+          },
+          vAxis: {
+            title: 'Percent'
+          },
+          curveType: 'function',
+        };
+        var chart = new google.visualization.LineChart(document.getElementById('chart_humid'));
+
+        chart.draw(data, options);
+      }
+    </script>
+  </body>
+</html>
+```
+
+- Add file -`loader.js` as js folder
+
+- Edit File : `lab_app.py`
+```py
+@app.route("/lab_env_db", methods=['GET']) 
+def lab_env_db():
+	temperatures, humidities, from_date_str, to_date_str = get_records()
+	return render_template(
+		"lab_env_db.html",
+		temp 		= temperatures,
+		hum			= humidities,	
+		temp_items	= len(temperatures),
+		hum_items	= len(humidities)
+	)
+
+def get_records():
+	from_date_str 	= request.args.get('from',time.strftime("%Y-%m-%d 00:00"))
+	to_date_str 	= request.args.get('to',time.strftime("%Y-%m-%d %H:%M"))
+	range_h_form	= request.args.get('range_h',''); 
+
+	range_h_int 	= "nan"
+
+	try: 
+		range_h_int	= int(range_h_form)
+	except:
+		print ("range_h_form not a number")
+
+	if not validate_date(from_date_str):
+		from_date_str 	= time.strftime("%Y-%m-%d 00:00")
+	if not validate_date(to_date_str):
+		to_date_str 	= time.strftime("%Y-%m-%d %H:%M")
+
+	
+	if isinstance(range_h_int,int):	
+		time_now		= datetime.datetime.now()
+		time_from 	  	= time_now - datetime.timedelta(hours = range_h_int)
+		time_to   	  	= time_now
+		from_date_str   = time_from.strftime("%Y-%m-%d %H:%M")
+		to_date_str	    = time_to.strftime("%Y-%m-%d %H:%M")
+
+	conn=sqlite3.connect('/var/www/lab_app/lab_app.db')
+	curs=conn.cursor()
+	curs.execute("SELECT * FROM temperatures WHERE rDateTime BETWEEN ? AND ?", (from_date_str, to_date_str))
+	temperatures 	= curs.fetchall()
+	curs.execute("SELECT * FROM humidities WHERE rDateTime BETWEEN ? AND ?", (from_date_str, to_date_str))
+	humidities 		= curs.fetchall()
+	conn.close()
+	return [temperatures, humidities, from_date_str, to_date_str]
+```
+`$ systemctl restart emperor.uwsgi.service`
+
+## 7. Setup Date time Picker <a href="" name="date"> - </a>
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Lab App DB</title>
+  
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="static/css/normalize.css">
+    <link rel="stylesheet" href="static/css/skeleton.css">
+    <link rel="stylesheet" href="static/css/jquery.datetimepicker.min.css">
+    <link rel="stylesheet" href="static/css/style.css">
+
+    <link rel="icon" type="static/image/png" href="static/images/favicon.png">
+    
+  </head>
+  <body>
+    <div class="container">
+      <div class="navBar" id="mainNavBar">
+        <a href="/">Home</a>
+        <a href="/lab_app_db">Application</a>
+      </div>
+    </div>
+    <div class="container">
+      <div class="row">
+        <form id="datetime_range" action="/lab_env_db" method="GET"> 
+            <div class="three columns">
+              <label for="from">From date</label>
+              <input class="u-full-width" id="datetimepicker1" type="text" value="{{from_date}}" name="from">
+            </div>        
+            <div class="three columns">
+              <label for="to">To date</label>           
+              <input class="u-full-width" id="datetimepicker2" type="text" value="{{to_date}}" name="to">
+            </div>           
+            <div class="two columns">           
+              <input class="button-primary" type="submit" value="Submit" style="position:relative; top: 28px" id="submit_button" />
+            </div>        
+        </form> 
+      </div> 
+      </div>
+    </div>
+
+    <script src="static/js/main.js"></script>
+    <script src="static/js/jquery-3.6.0.slim.min.js"></script>
+    <script src="static/js/jquery.datetimepicker.full.min.js"></script>
+    <script>
+      jQuery('#datetimepicker1').datetimepicker(
+        {
+          format:'Y-m-d H:i',
+          defaultDate:'{{from_date}}'
+        });
+      jQuery('#datetimepicker2').datetimepicker({
+          format:'Y-m-d H:i',
+          defaultDate:'{{to_date}}'
+        });
+  
+        jQuery("#range_select input[type=radio]").click(function(){ 
+          jQuery("#range_select").submit();
+        });
+    </script>
+  </body>
+</html>
+```
+- Add file -`jquery.datetimepicker.min.css` as css folder
+- Add file -`jquery.datetimepicker.full.min.js` as js folder
+
+- Edit File : `lab_app.py`
+```py
+@app.route("/lab_env_db", methods=['GET']) 
+def lab_env_db():
+	temperatures, humidities, from_date_str, to_date_str = get_records()
+	return render_template(
+		"lab_env_db.html",
+		temp 		= temperatures,
+		hum			= humidities,
+		from_date 	= from_date_str, 
+		to_date 	= to_date_str,	
+		temp_items	= len(temperatures),
+		hum_items	= len(humidities)
+	)
 ```
 `$ systemctl restart emperor.uwsgi.service`
